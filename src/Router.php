@@ -27,8 +27,26 @@ class Router
 
     public function dispatch()
     {
-        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $uri = $_SERVER['REQUEST_URI'];
         $method = $_SERVER['REQUEST_METHOD'];
+
+        // Strip query string (?foo=bar)
+        if (false !== $pos = strpos($uri, '?')) {
+            $uri = substr($uri, 0, $pos);
+        }
+        
+        // robustly strip the script path (e.g. /public or /subdir) to get the relative route
+        $scriptPath = dirname($_SERVER['SCRIPT_NAME']);
+        // Normalize slashes
+        $scriptPath = str_replace('\\', '/', $scriptPath);
+        if ($scriptPath !== '/' && strpos($uri, $scriptPath) === 0) {
+            $uri = substr($uri, strlen($scriptPath));
+        }
+
+        // Just in case /public is still there explicitly
+        if (strpos($uri, '/public') === 0) {
+            $uri = substr($uri, 7);
+        }
 
         // Remove trailing slash
         $uri = rtrim($uri, '/');
